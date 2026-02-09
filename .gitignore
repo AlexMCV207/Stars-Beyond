@@ -14,5 +14,5 @@ Release/
 # MAUI / Xamarin
 *.apk
 *.aab
-*.xaml.cs
+
 *.pdb
