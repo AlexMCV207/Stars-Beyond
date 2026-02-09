@@ -1,0 +1,18 @@
+# Build Folders
+bin/
+obj/
+Debug/
+Release/
+
+# Visual Studio / Rider / VSCode
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# MAUI / Xamarin
+*.apk
+*.aab
+*.xaml.cs
+*.pdb
