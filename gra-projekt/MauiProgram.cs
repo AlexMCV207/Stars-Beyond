@@ -13,6 +13,7 @@ namespace gra_projekt
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                    fonts.AddFont("determination.ttf", "Determination");
                 });
 
 #if DEBUG

@@ -13,7 +13,7 @@ public partial class MainPage : ContentPage
     const int MaxHp = 20;
     const int TargetDodges = 20;
 
-    const double PlayerSpeed = 3.0;
+    const double PlayerSpeed = 6.0;
     const double BulletSpeed = 4.0;   
 
     int hp = MaxHp;
