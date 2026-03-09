@@ -3,4 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="stars_beyond.CreditsPage"
              Background="Black">
+    <Button WidthRequest="100" Text="X" Clicked="GoToMain"/>
+
 </ContentPage>

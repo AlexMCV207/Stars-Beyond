@@ -6,4 +6,8 @@ public partial class CreditsPage : ContentPage
 	{
 		InitializeComponent();
 	}
+    private async void GoToMain(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("//MainMenu");
+    }
 }
