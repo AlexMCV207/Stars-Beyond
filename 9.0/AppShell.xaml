@@ -22,9 +22,12 @@
          Title=""
          ContentTemplate="{DataTemplate local:OptionsPage}"
          Route="OptionsPage" />
-       <ShellContent
+    <ShellContent
          Title=""
          ContentTemplate="{DataTemplate local:CreditsPage}"
          Route="CreditsPage"/>
-
+    <ShellContent
+     Title=""
+     ContentTemplate="{DataTemplate local:GameplayPageMainUI}"
+     Route="GameplayPageMainUI"/>
 </Shell>

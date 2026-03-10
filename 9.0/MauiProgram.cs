@@ -1,5 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using CommunityToolkit.Maui;
+using Plugin.Maui.Audio;
+
+
 
 namespace stars_beyond
 {
@@ -18,9 +21,12 @@ namespace stars_beyond
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                     fonts.AddFont("determination.ttf", "Determination");
                 });
+            builder.Services.AddSingleton(AudioManager.Current);
+            builder.Services.AddSingleton<MusicService>();
 
 #if DEBUG
             builder.Logging.AddDebug();
+            
 #endif
 
             return builder.Build();
