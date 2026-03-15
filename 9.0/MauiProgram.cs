@@ -23,6 +23,7 @@ namespace stars_beyond
                 });
             builder.Services.AddSingleton(AudioManager.Current);
             builder.Services.AddSingleton<MusicService>();
+            builder.Services.AddSingleton<SfxService>();
 
 #if DEBUG
             builder.Logging.AddDebug();

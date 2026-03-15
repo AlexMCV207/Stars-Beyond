@@ -21,5 +21,11 @@
             <Button Margin="0,-4,0,0" Clicked="GoToCredits" CornerRadius="0" BackgroundColor="Black" BorderWidth="4" BorderColor="White" HeightRequest="60" Text="CREDITS" TextColor="White" FontSize="32" FontFamily="Determination"/>
             <Button Margin="0,-4,0,0" Clicked="Exit" CornerRadius="0" BackgroundColor="Black" BorderWidth="4" BorderColor="White" HeightRequest="60" Text="EXIT" TextColor="White" FontSize="32" FontFamily="Determination"/>
         </VerticalStackLayout>
+        <BoxView
+    x:Name="FadeOverlay"
+    BackgroundColor="Black"
+    Opacity="0"
+    InputTransparent="True"
+    ZIndex="10"/>
     </Grid>
 </ContentPage>
