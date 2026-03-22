@@ -157,7 +157,8 @@
                 BorderWidth="4"
                 CornerRadius="0"
                 ImageSource="mercy_icon.png"
-                Padding="4"/>
+                Padding="4"
+                Clicked="MercyClicked"/>
         </Grid>
         <Frame
             x:Name="BattleFrame"

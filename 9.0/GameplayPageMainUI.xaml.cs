@@ -5,7 +5,7 @@ public partial class GameplayPageMainUI : ContentPage
     public GameplayPageMainUI()
     {
         InitializeComponent();
-        UpdateItemMenu();
+        DialogLabel.Text = "* Co zrobisz?";
     }
 
     enum TurnState
@@ -13,7 +13,8 @@ public partial class GameplayPageMainUI : ContentPage
         PlayerTurn,
         AttackMinigame,
         EnemyTurn,
-        ItemMenu
+        ItemMenu,
+        MercyMenu
     }
 
     TurnState currentState = TurnState.PlayerTurn;
@@ -29,43 +30,64 @@ public partial class GameplayPageMainUI : ContentPage
         { "Banan", (3, 1) }
     };
 
-    void UpdateItemMenu()
-    {
-        string text = "* ITEMY:\n";
+    List<string> itemOrder = new() { "Jablko", "Gruszka", "Banan" };
+    int selectedItemIndex = 0;
 
-        foreach (var i in items)
+    int mercyIndex = 0;
+
+
+    void ItemClicked(object sender, EventArgs e)
+    {
+        if (currentState == TurnState.PlayerTurn)
         {
-            if (i.Value.count > 0)
-                text += $"{i.Key} (+{i.Value.heal}HP) x{i.Value.count}\n";
+            currentState = TurnState.ItemMenu;
+            selectedItemIndex = 0;
+            ShowItems();
+        }
+        else if (currentState == TurnState.ItemMenu)
+        {
+            UseItem(); 
+        }
+    }
+
+    void ShowItems()
+    {
+        var available = itemOrder.Where(x => items[x].count > 0).ToList();
+
+        if (available.Count == 0)
+        {
+            DialogLabel.Text = "* Brak itemów!";
+            currentState = TurnState.PlayerTurn;
+            return;
         }
 
-        if (text == "* ITEMY:\n")
-            text += "Brak itemów";
+        string text = "* ITEMY:\n";
 
-        text += "\n\nKliknij dialog aby użyć";
+        for (int i = 0; i < available.Count; i++)
+        {
+            var name = available[i];
+            var data = items[name];
+
+            string prefix = (i == selectedItemIndex) ? "> " : "  ";
+
+            text += $"{prefix}{name} (+{data.heal} HP) x{data.count}\n";
+        }
+
+        text += "\nKliknij dialog aby zmienić\nKliknij ITEM aby użyć";
 
         DialogLabel.Text = text;
     }
 
-    void ItemClicked(object sender, EventArgs e)
+    async void UseItem()
     {
-        if (currentState != TurnState.PlayerTurn)
+        var available = itemOrder.Where(x => items[x].count > 0).ToList();
+
+        if (available.Count == 0)
             return;
 
-        currentState = TurnState.ItemMenu;
-        UpdateItemMenu();
-    }
+        var name = available[selectedItemIndex];
+        var item = items[name];
 
-    void OnDialogTapped(object sender, EventArgs e)
-    {
-        if (currentState != TurnState.ItemMenu)
-            return;
-
-        UseItem();
-    }
-
-    void UseItem()
-    {
         if (playerHp >= playerMaxHp)
         {
             DialogLabel.Text = "* Masz pełne HP!";
@@ -73,32 +95,100 @@ public partial class GameplayPageMainUI : ContentPage
             return;
         }
 
-        var item = items.FirstOrDefault(x => x.Value.count > 0);
-
-        if (item.Key == null)
-        {
-            DialogLabel.Text = "* Brak itemów!";
-            currentState = TurnState.PlayerTurn;
-            return;
-        }
-
-        int heal = item.Value.heal;
-
-        int newHp = Math.Min(playerHp + heal, playerMaxHp);
-        int realHeal = newHp - playerHp;
+        int newHp = Math.Min(playerHp + item.heal, playerMaxHp);
+        int healed = newHp - playerHp;
 
         playerHp = newHp;
 
-        items[item.Key] = (item.Value.heal, item.Value.count - 1);
+        items[name] = (item.heal, item.count - 1);
 
         UpdatePlayerHp();
 
-        DialogLabel.Text = $"* Użyto {item.Key}! +{realHeal} HP";
+        DialogLabel.Text = $"* Użyto {name}! +{healed} HP";
+
+        await Task.Delay(500);
+
+        EndPlayerTurn();
+    }
+
+
+    void MercyClicked(object sender, EventArgs e)
+    {
+        if (currentState == TurnState.PlayerTurn)
+        {
+            currentState = TurnState.MercyMenu;
+            mercyIndex = 0;
+            ShowMercy();
+        }
+        else if (currentState == TurnState.MercyMenu)
+        {
+            UseMercy();
+        }
+    }
+
+    void ShowMercy()
+    {
+        string text = "* MERCY:\n";
+
+        text += (mercyIndex == 0 ? "> " : "  ") + "Flee\n";
+        text += (mercyIndex == 1 ? "> " : "  ") + "Escape\n";
+
+        text += "\nKliknij dialog aby zmienić\nKliknij MERCY aby wybrać";
+
+        DialogLabel.Text = text;
+    }
+
+    async void UseMercy()
+    {
+        if (mercyIndex == 0)
+        {
+            DialogLabel.Text = "* Uciekasz...";
+
+            await Task.Delay(500);
+
+            StartEnemyTurn();
+        }
+        else
+        {
+            DialogLabel.Text = "* Escaped";
+
+            await Task.Delay(800);
+
+            await Shell.Current.GoToAsync("//MainMenu");
+        }
 
         currentState = TurnState.PlayerTurn;
     }
 
-    
+
+    void OnDialogTapped(object sender, EventArgs e)
+    {
+        if (currentState == TurnState.ItemMenu)
+        {
+            var available = itemOrder.Where(x => items[x].count > 0).ToList();
+
+            if (available.Count == 0)
+                return;
+
+            selectedItemIndex++;
+
+            if (selectedItemIndex >= available.Count)
+                selectedItemIndex = 0;
+
+            ShowItems();
+        }
+        else if (currentState == TurnState.MercyMenu)
+        {
+            mercyIndex++;
+
+            if (mercyIndex > 1)
+                mercyIndex = 0;
+
+            ShowMercy();
+        }
+    }
+
+
     void FightClicked(object sender, EventArgs e)
     {
         if (currentState != TurnState.PlayerTurn)
@@ -173,10 +263,15 @@ public partial class GameplayPageMainUI : ContentPage
     {
         AttackMinigame.IsVisible = false;
 
-        currentState = TurnState.EnemyTurn;
+        EndPlayerTurn();
+    }
 
+    void EndPlayerTurn()
+    {
+        currentState = TurnState.EnemyTurn;
         StartEnemyTurn();
     }
+
 
     async void StartEnemyTurn()
     {
@@ -226,6 +321,7 @@ public partial class GameplayPageMainUI : ContentPage
         DialogLabel.Text = $"* Zadałeś {damage} obrażeń!";
         _ = ShowDamageText(damage);
     }
+
 
     const int PlayerSize = 16;
     const int BulletSize = 10;
