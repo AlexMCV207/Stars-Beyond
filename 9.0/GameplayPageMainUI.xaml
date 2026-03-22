@@ -38,6 +38,9 @@
                 BackgroundColor="Black"
                 Padding="15"
                 HeightRequest="180">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDialogTapped"/>
+                </Border.GestureRecognizers>
 
                 <Grid>
                     <Label 
@@ -59,7 +62,7 @@
                             Aspect="Fill"
                             HorizontalOptions="Fill"
                             VerticalOptions="Center"
-                            HeightRequest="100"/>   
+                            HeightRequest="100"/>
                         <BoxView 
                             x:Name="AttackSlider"
                             Color="White"
@@ -132,7 +135,7 @@
                 CornerRadius="0"
                 ImageSource="act_icon.png"
                 Padding="4">
-                
+
             </Button>
             <Button 
                 Grid.Row="1" 
@@ -143,7 +146,8 @@
                 BorderWidth="4"
                 CornerRadius="0"
                 ImageSource="item_icon.png"
-                Padding="4"/>
+                Padding="4"
+                Clicked="ItemClicked"/>
             <Button 
                 Grid.Row="1" 
                 Grid.Column="1"

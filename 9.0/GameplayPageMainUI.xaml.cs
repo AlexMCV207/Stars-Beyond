@@ -2,15 +2,18 @@ namespace stars_beyond;
 
 public partial class GameplayPageMainUI : ContentPage
 {
-	public GameplayPageMainUI()
-	{
+    public GameplayPageMainUI()
+    {
         InitializeComponent();
-	}
+        UpdateItemMenu();
+    }
+
     enum TurnState
     {
         PlayerTurn,
         AttackMinigame,
-        EnemyTurn
+        EnemyTurn,
+        ItemMenu
     }
 
     TurnState currentState = TurnState.PlayerTurn;
@@ -18,6 +21,84 @@ public partial class GameplayPageMainUI : ContentPage
     int enemyMaxHp = 30;
     int enemyHp = 30;
 
+
+    Dictionary<string, (int heal, int count)> items = new()
+    {
+        { "Jablko", (1, 2) },
+        { "Gruszka", (2, 1) },
+        { "Banan", (3, 1) }
+    };
+
+    void UpdateItemMenu()
+    {
+        string text = "* ITEMY:\n";
+
+        foreach (var i in items)
+        {
+            if (i.Value.count > 0)
+                text += $"{i.Key} (+{i.Value.heal}HP) x{i.Value.count}\n";
+        }
+
+        if (text == "* ITEMY:\n")
+            text += "Brak itemÃ³w";
+
+        text += "\n\nKliknij dialog aby uÅ¼yÄ‡";
+
+        DialogLabel.Text = text;
+    }
+
+    void ItemClicked(object sender, EventArgs e)
+    {
+        if (currentState != TurnState.PlayerTurn)
+            return;
+
+        currentState = TurnState.ItemMenu;
+        UpdateItemMenu();
+    }
+
+    void OnDialogTapped(object sender, EventArgs e)
+    {
+        if (currentState != TurnState.ItemMenu)
+            return;
+
+        UseItem();
+    }
+
+    void UseItem()
+    {
+        if (playerHp >= playerMaxHp)
+        {
+            DialogLabel.Text = "* Masz peÅ‚ne HP!";
+            currentState = TurnState.PlayerTurn;
+            return;
+        }
+
+        var item = items.FirstOrDefault(x => x.Value.count > 0);
+
+        if (item.Key == null)
+        {
+            DialogLabel.Text = "* Brak itemÃ³w!";
+            currentState = TurnState.PlayerTurn;
+            return;
+        }
+
+        int heal = item.Value.heal;
+
+        int newHp = Math.Min(playerHp + heal, playerMaxHp);
+        int realHeal = newHp - playerHp;
+
+        playerHp = newHp;
+
+        items[item.Key] = (item.Value.heal, item.Value.count - 1);
+
+        UpdatePlayerHp();
+
+        DialogLabel.Text = $"* UÅ¼yto {item.Key}! +{realHeal} HP";
+
+        currentState = TurnState.PlayerTurn;
+    }
+
+    
     void FightClicked(object sender, EventArgs e)
     {
         if (currentState != TurnState.PlayerTurn)
@@ -25,6 +106,7 @@ public partial class GameplayPageMainUI : ContentPage
 
         StartAttackMinigame();
     }
+
     bool isSliderMoving;
     double sliderX;
     double sliderSpeed = 10;
@@ -43,9 +125,10 @@ public partial class GameplayPageMainUI : ContentPage
 
         _ = AnimateSlider();
     }
+
     async Task AnimateSlider()
     {
-        await Task.Delay(500); // slider delay
+        await Task.Delay(500);
 
         double maxX = AttackMinigame.Width - AttackSlider.Width;
 
@@ -56,17 +139,16 @@ public partial class GameplayPageMainUI : ContentPage
             if (sliderX >= maxX)
             {
                 isSliderMoving = false;
-
-                Console.WriteLine("MISS - 0 damage");
-
                 DealDamage(0);
                 EndAttackMinigame();
                 return;
             }
+
             AttackSlider.TranslationX = sliderX;
             await Task.Delay(16);
         }
     }
+
     void OnAttackTap(object sender, EventArgs e)
     {
         if (currentState != TurnState.AttackMinigame)
@@ -83,11 +165,10 @@ public partial class GameplayPageMainUI : ContentPage
 
         int damage = (int)(accuracy * 70);
 
-        Console.WriteLine($"HIT accuracy: {accuracy:0.00} damage: {damage}");
-
         DealDamage(damage);
         EndAttackMinigame();
     }
+
     void EndAttackMinigame()
     {
         AttackMinigame.IsVisible = false;
@@ -96,12 +177,13 @@ public partial class GameplayPageMainUI : ContentPage
 
         StartEnemyTurn();
     }
+
     async void StartEnemyTurn()
     {
         currentState = TurnState.EnemyTurn;
 
         DialogLabel.IsVisible = true;
-        DialogLabel.Text = "* Wróg atakuje...";
+        DialogLabel.Text = "* WrÃ³g atakuje...";
 
         await Task.Delay(800);
 
@@ -120,38 +202,31 @@ public partial class GameplayPageMainUI : ContentPage
     }
 
     Random random = new();
+
     async Task RunEnemyAttack()
     {
-        int attackId = random.Next(1);
-
-        switch (attackId)
-        {
-            case 0:
-                StartBulletHell();
-                await Task.Delay(6000); // czas trwania ataku
-                StopBulletHell();
-                break;
-        }
+        StartBulletHell();
+        await Task.Delay(6000);
+        StopBulletHell();
     }
+
     void EndEnemyTurn()
-{
+    {
         currentState = TurnState.PlayerTurn;
         ActionButtons.IsVisible = true;
         DialogLabel.IsVisible = true;
         DialogLabel.Text = "* Co zrobisz?";
-}
+    }
+
     void DealDamage(int damage)
     {
         enemyHp -= damage;
         enemyHp = Math.Max(0, enemyHp);
-        DialogLabel.Text = $"* Zada³eœ {damage} obra¿eñ!";
-        _ = ShowDamageText(damage);
 
-        if (enemyHp <= 0)
-        {
-            
-        }
+        DialogLabel.Text = $"* ZadaÅ‚eÅ› {damage} obraÅ¼eÅ„!";
+        _ = ShowDamageText(damage);
     }
+
     const int PlayerSize = 16;
     const int BulletSize = 10;
 
@@ -205,6 +280,7 @@ public partial class GameplayPageMainUI : ContentPage
 
         moveX = moveY = 0;
     }
+
     void GameTick(object sender, EventArgs e)
     {
         if (!gameRunning) return;
@@ -213,6 +289,7 @@ public partial class GameplayPageMainUI : ContentPage
         MovePlayer();
         CheckCollisions();
     }
+
     void MovePlayer()
     {
         double newX = Player.TranslationX + moveX;
@@ -224,6 +301,7 @@ public partial class GameplayPageMainUI : ContentPage
         Player.TranslationX = Math.Clamp(newX, 0, maxX);
         Player.TranslationY = Math.Clamp(newY, 0, maxY);
     }
+
     void SpawnBullet(object sender, EventArgs e)
     {
         var bullet = new BoxView
@@ -241,6 +319,7 @@ public partial class GameplayPageMainUI : ContentPage
 
         _ = MoveBullet(bullet);
     }
+
     async Task MoveBullet(BoxView bullet)
     {
         while (gameRunning && BattleField.Children.Contains(bullet))
@@ -256,6 +335,7 @@ public partial class GameplayPageMainUI : ContentPage
             await Task.Delay(16);
         }
     }
+
     void CheckCollisions()
     {
         foreach (var b in BattleField.Children.OfType<BoxView>()
@@ -270,6 +350,7 @@ public partial class GameplayPageMainUI : ContentPage
             }
         }
     }
+
     void UpdatePlayerHp()
     {
         HpLabel.Text = $"{playerHp}/{playerMaxHp}";
@@ -280,9 +361,10 @@ public partial class GameplayPageMainUI : ContentPage
         if (playerHp <= 0)
         {
             StopBulletHell();
-            DialogLabel.Text = "* Zgin¹³eœ";
+            DialogLabel.Text = "* ZginÄ…Å‚eÅ›";
         }
     }
+
     bool IsColliding(VisualElement a, VisualElement b)
     {
         var r1 = new Rect(a.TranslationX, a.TranslationY, a.Width, a.Height);
@@ -292,32 +374,14 @@ public partial class GameplayPageMainUI : ContentPage
     }
 
     async Task ShowDamageText(int damage)
-{
+    {
         DamageLabel.Text = damage.ToString();
         DamageLabel.Opacity = 0;
-        DamageLabel.TranslationX = 0;
-        DamageLabel.TranslationY = 0;
         DamageLabel.IsVisible = true;
 
-        Random rand = new();
-
-        double side = rand.Next(2) == 0 ? -1 : 1;
-        double angle = rand.NextDouble() * Math.PI * 2;
-        double distance = rand.Next(40, 80);
-
-        double startX = side * rand.Next(80, 140);
-        double startY = rand.Next(-100, -60);
-        double moveX = startX + Math.Cos(angle) * distance;
-        double moveY = startY + -Math.Abs(Math.Sin(angle) * distance);
-
-        var fadeIn = DamageLabel.FadeTo(1, 150);
-        var move = DamageLabel.TranslateTo(moveX, moveY, 700, Easing.SinOut);
-
-        await Task.WhenAll(fadeIn, move);
-
+        await DamageLabel.FadeTo(1, 150);
         await DamageLabel.FadeTo(0, 400);
 
-
         DamageLabel.IsVisible = false;
-}
+    }
 }
