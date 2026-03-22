@@ -134,7 +134,8 @@
                 BorderWidth="4"
                 CornerRadius="0"
                 ImageSource="act_icon.png"
-                Padding="4">
+                Padding="4"
+                Clicked="ActClicked">
 
             </Button>
             <Button 
