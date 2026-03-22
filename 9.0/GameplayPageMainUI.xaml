@@ -3,6 +3,7 @@
              x:Class="stars_beyond.GameplayPageMainUI"
              Background="Black">
 
+
     <Grid RowDefinitions="Auto,Auto,Auto,Auto" Padding="10" RowSpacing="10" VerticalOptions="End">
         <VerticalStackLayout>
             <Frame 
@@ -13,10 +14,23 @@
                 Padding="0"
                 HorizontalOptions="Center"
                 Margin="0,0,0,-2">
-                <Image 
-                    x:Name="CharacterImage"
-                    Source="concept_1.png"
-                    Aspect="AspectFit"/>
+                <Grid>
+                    <Label
+                        x:Name="DamageLabel"
+                        Text="0"
+                        TextColor="Red"
+                        FontSize="36"
+                        FontFamily="Determination"
+                        Opacity="0"
+                        IsVisible="False"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        ZIndex="10"/>
+                    <Image 
+                        x:Name="CharacterImage"
+                        Source="concept_1.png"
+                        Aspect="AspectFit"/>
+                </Grid>
             </Frame>
             <Border 
                 Stroke="White"
@@ -24,11 +38,36 @@
                 BackgroundColor="Black"
                 Padding="15"
                 HeightRequest="180">
-                 <Label x:Name="DialogLabel"
-                     Text="* Placeholder Text"
-                     TextColor="White"
-                     FontFamily="Determination"
-                     FontSize="25"/>
+
+                <Grid>
+                    <Label 
+                        x:Name="DialogLabel"
+                        Text="* Placeholder Text"
+                        TextColor="White"
+                        IsVisible="True"
+                        FontFamily="Determination"
+                        FontSize="25"/>
+                    <Grid 
+                        x:Name="AttackMinigame"
+                        IsVisible="False">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnAttackTap"/>
+                        </Grid.GestureRecognizers>
+                        <Image 
+                            x:Name="AttackBar"
+                            Source="attack_bar.png"
+                            Aspect="Fill"
+                            HorizontalOptions="Fill"
+                            VerticalOptions="Center"
+                            HeightRequest="100"/>   
+                        <BoxView 
+                            x:Name="AttackSlider"
+                            Color="White"
+                            WidthRequest="8"
+                            HeightRequest="125"
+                            HorizontalOptions="Start"/>
+                    </Grid>
+                </Grid>
             </Border>
         </VerticalStackLayout>
         <Grid 
@@ -71,7 +110,7 @@
                     Margin="140,0,0,0"/>
             </Grid>
         </Grid>
-        <Grid Grid.Row="3" ColumnDefinitions="*,*" RowDefinitions="*,*" RowSpacing="10" ColumnSpacing="10">
+        <Grid Grid.Row="3" ColumnDefinitions="*,*" RowDefinitions="*,*" RowSpacing="10" ColumnSpacing="10" x:Name="ActionButtons">
             <Button 
                 Grid.Row="0" 
                 Grid.Column="0"
@@ -81,7 +120,8 @@
                 BorderWidth="4"
                 CornerRadius="0"
                 ImageSource="fight_icon.png"
-                Padding="4"/>
+                Padding="4"
+                Clicked="FightClicked"/>
             <Button 
                 Grid.Row="0" 
                 Grid.Column="1"
@@ -114,6 +154,61 @@
                 CornerRadius="0"
                 ImageSource="mercy_icon.png"
                 Padding="4"/>
+        </Grid>
+        <Frame
+            x:Name="BattleFrame"
+            IsVisible="False"
+            BorderColor="White"
+            BackgroundColor="Black"
+            Padding="0"
+            HasShadow="False"
+            HeightRequest="250"
+            VerticalOptions="Center"
+            ZIndex="5"
+            CornerRadius="0">
+            <AbsoluteLayout 
+                x:Name="BattleField">
+                <BoxView
+                    x:Name="Player"
+                    WidthRequest="16"
+                    HeightRequest="16"
+                    Color="Red"/>
+            </AbsoluteLayout>
+        </Frame>
+        <Grid
+            x:Name="MovementControls"
+            IsVisible="False"
+            ColumnDefinitions="*,*,*"
+            RowDefinitions="Auto,Auto,Auto"
+            HorizontalOptions="Center">
+            <BoxView Grid.Row="0" Grid.Column="1" HeightRequest="40"/>
+            <Button 
+                Grid.Row="1" 
+                Grid.Column="0"
+                Text="left"
+                Pressed="LeftPressed"
+                Released="StopMove"/>
+
+            <Button 
+                Grid.Row="1" 
+                Grid.Column="1"
+                Text="up"
+                Pressed="UpPressed"
+                Released="StopMove"/>
+
+            <Button 
+                Grid.Row="1" 
+                Grid.Column="2"
+                Text="right"
+                Pressed="RightPressed"
+                Released="StopMove"/>
+
+            <Button 
+                Grid.Row="2" 
+                Grid.Column="1"
+                Text="down"
+                Pressed="DownPressed"
+                Released="StopMove"/>
         </Grid>
     </Grid>
 </ContentPage>
