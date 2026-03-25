@@ -1,243 +1,57 @@
-﻿namespace stars_beyond;
+using System.Threading.Tasks;
+
+namespace stars_beyond;
 
 public partial class GameplayPageMainUI : ContentPage
 {
-    public GameplayPageMainUI()
-    {
+	public GameplayPageMainUI()
+	{
         InitializeComponent();
-        DialogLabel.Text = "* Co zrobisz?";
-    }
-
+	}
     enum TurnState
     {
         PlayerTurn,
         AttackMinigame,
-        EnemyTurn,
-        ItemMenu,
-        MercyMenu,
-        ActMenu
+        EnemyTurn
     }
+
+    bool isInputLocked = false;
+    bool damageBoostActive = false;
+    double originalDialogWidth;
+
+    Dictionary<int, int> itemCount = new()
+{
+    { 0, 3 }, // small heal
+    { 1, 2 }, // medium heal
+    { 2, 1 }, // full heal
+    { 3, 2 }  // dmg boost
+};
+
+    string[] itemNames =
+    {
+    "Small heal (+5)",
+    "Medium heal (+13)",
+    "Full heal",
+    "Damage boost (150%)"
+};
 
     TurnState currentState = TurnState.PlayerTurn;
 
     int enemyMaxHp = 30;
     int enemyHp = 30;
 
-
-    Dictionary<string, (int heal, int count)> items = new()
-    {
-        { "Jablko", (1, 2) },
-        { "Gruszka", (2, 1) },
-        { "Banan", (3, 1) }
-    };
-
-    List<string> itemOrder = new() { "Jablko", "Gruszka", "Banan" };
-    int selectedItemIndex = 0;
-
-    int mercyIndex = 0;
-
-
-    List<string> actOptions = new() { "Check", "Talk", "Threaten" };
-    int actIndex = 0;
-
-    void ItemClicked(object sender, EventArgs e)
-    {
-        if (currentState == TurnState.PlayerTurn)
-        {
-            currentState = TurnState.ItemMenu;
-            selectedItemIndex = 0;
-            ShowItems();
-        }
-        else if (currentState == TurnState.ItemMenu)
-        {
-            UseItem();
-        }
-    }
-
-    void ShowItems()
-    {
-        var available = itemOrder.Where(x => items[x].count > 0).ToList();
-
-        if (available.Count == 0)
-        {
-            DialogLabel.Text = "* Brak itemów!";
-            currentState = TurnState.PlayerTurn;
-            return;
-        }
-
-        string text = "* ITEMY:\n";
-
-        for (int i = 0; i < available.Count; i++)
-        {
-            var name = available[i];
-            var data = items[name];
-
-            string prefix = (i == selectedItemIndex) ? "> " : "  ";
-            text += $"{prefix}{name} (+{data.heal} HP) x{data.count}\n";
-        }
-
-        text += "\nKliknij dialog = zmień\nKliknij ITEM = użyj";
-        DialogLabel.Text = text;
-    }
-
-    async void UseItem()
-    {
-        var available = itemOrder.Where(x => items[x].count > 0).ToList();
-        if (available.Count == 0) return;
-
-        var name = available[selectedItemIndex];
-        var item = items[name];
-
-        if (playerHp >= playerMaxHp)
-        {
-            DialogLabel.Text = "* Masz pełne HP!";
-            currentState = TurnState.PlayerTurn;
-            return;
-        }
-
-        int newHp = Math.Min(playerHp + item.heal, playerMaxHp);
-        int healed = newHp - playerHp;
-
-        playerHp = newHp;
-        items[name] = (item.heal, item.count - 1);
-
-        UpdatePlayerHp();
-
-        DialogLabel.Text = $"* Użyto {name}! +{healed} HP";
-
-        await Task.Delay(500);
-        EndPlayerTurn();
-    }
-    void MercyClicked(object sender, EventArgs e)
-    {
-        if (currentState == TurnState.PlayerTurn)
-        {
-            currentState = TurnState.MercyMenu;
-            mercyIndex = 0;
-            ShowMercy();
-        }
-        else if (currentState == TurnState.MercyMenu)
-        {
-            UseMercy();
-        }
-    }
-
-    void ShowMercy()
-    {
-        string text = "* MERCY:\n";
-
-        text += (mercyIndex == 0 ? "> " : "  ") + "Flee\n";
-        text += (mercyIndex == 1 ? "> " : "  ") + "Escape\n";
-
-        text += "\nKliknij dialog = zmień\nKliknij MERCY = wybierz";
-        DialogLabel.Text = text;
-    }
-
-    async void UseMercy()
-    {
-        if (mercyIndex == 0)
-        {
-            DialogLabel.Text = "* Uciekasz...";
-            await Task.Delay(500);
-            StartEnemyTurn();
-        }
-        else
-        {
-            DialogLabel.Text = "* Escaped";
-            await Task.Delay(800);
-            await Shell.Current.GoToAsync("//MainMenu");
-        }
-
-        currentState = TurnState.PlayerTurn;
-    }
-    void ActClicked(object sender, EventArgs e)
-    {
-        if (currentState == TurnState.PlayerTurn)
-        {
-            currentState = TurnState.ActMenu;
-            actIndex = 0;
-            ShowAct();
-        }
-        else if (currentState == TurnState.ActMenu)
-        {
-            UseAct();
-        }
-    }
-
-    void ShowAct()
-    {
-        string text = "* ACT:\n";
-
-        for (int i = 0; i < actOptions.Count; i++)
-        {
-            string prefix = (i == actIndex) ? "> " : "  ";
-            text += prefix + actOptions[i] + "\n";
-        }
-
-        text += "\nKliknij dialog = zmień\nKliknij ACT = wybierz";
-        DialogLabel.Text = text;
-    }
-
-    async void UseAct()
-    {
-        string action = actOptions[actIndex];
-
-        switch (action)
-        {
-            case "Check":
-                DialogLabel.Text = "* Wróg: 30 HP\n* Wygląda podejrzanie";
-                break;
-
-            case "Talk":
-                DialogLabel.Text = "* Próbujesz rozmawiać...\n* To nie działa";
-                break;
-
-            case "Threaten":
-                DialogLabel.Text = "* Grozisz przeciwnikowi!\n* Jest zdenerwowany";
-                break;
-        }
-
-        await Task.Delay(800);
-        EndPlayerTurn();
-    }
-    void OnDialogTapped(object sender, EventArgs e)
-    {
-        if (currentState == TurnState.ItemMenu)
-        {
-            var available = itemOrder.Where(x => items[x].count > 0).ToList();
-            if (available.Count == 0) return;
-
-            selectedItemIndex++;
-            if (selectedItemIndex >= available.Count)
-                selectedItemIndex = 0;
-
-            ShowItems();
-        }
-        else if (currentState == TurnState.MercyMenu)
-        {
-            mercyIndex++;
-            if (mercyIndex > 1)
-                mercyIndex = 0;
-
-            ShowMercy();
-        }
-        else if (currentState == TurnState.ActMenu)
-        {
-            actIndex++;
-            if (actIndex >= actOptions.Count)
-                actIndex = 0;
-
-            ShowAct();
-        }
-    }
     void FightClicked(object sender, EventArgs e)
     {
-        if (currentState != TurnState.PlayerTurn)
+        if (isInputLocked || currentState != TurnState.PlayerTurn)
             return;
+
+        isInputLocked = true;
+        ActMenuGrid.IsVisible = false;
+        MercyMenuGrid.IsVisible = false;
+        ItemMenuGrid.IsVisible = false;
 
         StartAttackMinigame();
     }
-
     bool isSliderMoving;
     double sliderX;
     double sliderSpeed = 10;
@@ -256,10 +70,9 @@ public partial class GameplayPageMainUI : ContentPage
 
         _ = AnimateSlider();
     }
-
     async Task AnimateSlider()
     {
-        await Task.Delay(500);
+        await Task.Delay(500); // slider delay
 
         double maxX = AttackMinigame.Width - AttackSlider.Width;
 
@@ -270,16 +83,17 @@ public partial class GameplayPageMainUI : ContentPage
             if (sliderX >= maxX)
             {
                 isSliderMoving = false;
+
+                Console.WriteLine("MISS - 0 damage");
+
                 DealDamage(0);
                 EndAttackMinigame();
                 return;
             }
-
             AttackSlider.TranslationX = sliderX;
             await Task.Delay(16);
         }
     }
-
     void OnAttackTap(object sender, EventArgs e)
     {
         if (currentState != TurnState.AttackMinigame)
@@ -295,69 +109,347 @@ public partial class GameplayPageMainUI : ContentPage
         accuracy = Math.Clamp(accuracy, 0, 1);
 
         int damage = (int)(accuracy * 70);
+        if (damageBoostActive)
+        {
+            damage = (int)(damage * 1.5);
+            damageBoostActive = false;
+        }
+
+        Console.WriteLine($"HIT accuracy: {accuracy:0.00} damage: {damage}");
 
         DealDamage(damage);
         EndAttackMinigame();
     }
-
     void EndAttackMinigame()
     {
         AttackMinigame.IsVisible = false;
-        EndPlayerTurn();
+
+        currentState = TurnState.EnemyTurn;
+
+        StartEnemyTurn();
+    }
+    void ActClicked(object sender, EventArgs e)
+    {
+        if (isInputLocked || currentState != TurnState.PlayerTurn)
+            return;
+
+        ActMenuGrid.IsVisible = true;
+        MercyMenuGrid.IsVisible = false;
+        ItemMenuGrid.IsVisible = false;
+
+        DialogLabel.Text = "";
+    }
+    async void ActOptionClicked(object sender, EventArgs e)
+    {
+        if (isInputLocked)
+            return;
+
+        isInputLocked = true;
+
+        if (sender is Button btn && btn.CommandParameter != null)
+        {
+            int index = int.Parse(btn.CommandParameter.ToString());
+
+            ActMenuGrid.IsVisible = false;
+            ActionButtons.IsVisible = true;
+
+            RunAct(index);
+
+            await Task.Delay(1200);
+
+            StartEnemyTurn();
+
+            isInputLocked = false;
+        }
+    }
+    void RunAct(int index)
+    {
+        switch (index)
+        {
+            case 0:
+                DialogLabel.Text = GetCheckText();
+                break;
+
+            case 1:
+                DialogLabel.Text = GetOption1Text();
+                break;
+
+            case 2:
+                DialogLabel.Text = GetOption2Text();
+                break;
+
+            case 3:
+                DialogLabel.Text = GetOption3Text();
+                break;
+        }
+    }
+    string GetCheckText()
+    {
+        return "* Random guy ??HP \n * Info";
     }
 
-    void EndPlayerTurn()
+    string GetOption1Text()
     {
-        currentState = TurnState.EnemyTurn;
+        return "* Wow! Could this be option 1?";
+    }
+
+    string GetOption2Text()
+    {
+        return "* No way! Option 2?";
+    }
+
+    string GetOption3Text()
+    {
+        return "* This isn't actually option 3";
+    }
+    void MercyClicked(object sender, EventArgs e)
+    {
+        if (isInputLocked || currentState != TurnState.PlayerTurn)
+            return;
+
+        MercyMenuGrid.IsVisible = true;
+        ActMenuGrid.IsVisible = false;
+        ItemMenuGrid.IsVisible = false;
+
+        DialogLabel.Text = "";
+    }
+    async void MercyOptionClicked(object sender, EventArgs e)
+    {
+        if (isInputLocked)
+            return;
+
+        isInputLocked = true;
+
+        if (sender is Button btn && btn.CommandParameter != null)
+        {
+            int index = int.Parse(btn.CommandParameter.ToString());
+
+            MercyMenuGrid.IsVisible = false;
+            ActionButtons.IsVisible = true;
+
+            await RunMercy(index);
+        }
+    }
+    async Task RunMercy(int index)
+    {
+        switch (index)
+        {
+            case 0: // SPARE
+                DialogLabel.Text = GetSpareText();
+
+                await Task.Delay(3000);
+
+                StartEnemyTurn();
+                break;
+
+            case 1: // FLEE
+                DialogLabel.Text = "* You fled";
+
+                await Task.Delay(1500);
+
+                await FadeOutAndGoToMenu();
+                break;
+        }
+    }
+    async Task FadeOutAndGoToMenu()
+    {
+        await this.FadeTo(0, 400);
+
+        await Shell.Current.GoToAsync("//MainMenu");
+
+        this.Opacity = 1; // reset po powrocie
+    }
+    string GetSpareText()
+    {
+        if (enemyHp <= 0)
+            return "* Spared";
+
+        return "* No spare :<";
+    }
+    void ItemClicked(object sender, EventArgs e)
+    {
+        if (isInputLocked || currentState != TurnState.PlayerTurn)
+            return;
+
+        ItemMenuGrid.IsVisible = true;
+        ActMenuGrid.IsVisible = false;
+        MercyMenuGrid.IsVisible = false;
+
+        RefreshItemButtons();
+
+        DialogLabel.Text = " ";
+    }
+    void RefreshItemButtons()
+    {
+        Button[] buttons = { ItemBtn0, ItemBtn1, ItemBtn2, ItemBtn3 };
+
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            if (itemCount[i] > 0)
+            {
+                buttons[i].IsVisible = true;
+                buttons[i].Text = $"* {itemNames[i]} x{itemCount[i]}";
+            }
+            else
+            {
+                buttons[i].IsVisible = false;
+            }
+        }
+    }
+    async void ItemOptionClicked(object sender, EventArgs e)
+    {
+        if (isInputLocked)
+            return;
+
+        isInputLocked = true;
+
+        if (sender is Button btn && btn.CommandParameter != null)
+        {
+            int index = int.Parse(btn.CommandParameter.ToString());
+
+            ItemMenuGrid.IsVisible = false;
+            ActionButtons.IsVisible = true;
+
+            await UseItem(index);
+        }
+    }
+    async Task UseItem(int index)
+    {
+        if (itemCount[index] <= 0)
+            return;
+
+        itemCount[index]--;
+
+        switch (index)
+        {
+            case 0: // +5
+                HealPlayer(5);
+                DialogLabel.Text = "* Used small heal (+5 HP)";
+                break;
+
+            case 1: // +13
+                HealPlayer(13);
+                DialogLabel.Text = "* Used medium heal (+13 HP)";
+                break;
+
+            case 2: // full
+                HealPlayer(playerMaxHp);
+                DialogLabel.Text = "* Used full heal";
+                break;
+
+            case 3: // boost
+                damageBoostActive = true;
+                DialogLabel.Text = "* Used damage boost (150%)";
+                break;
+        }
+
+        await Task.Delay(3000);
+
         StartEnemyTurn();
+    }
+    void HealPlayer(int amount)
+    {
+        playerHp = Math.Min(playerHp + amount, playerMaxHp);
+        UpdatePlayerHp();
+    }
+    async Task AnimateBattleTransition()
+    {
+        if (originalDialogWidth == 0)
+            originalDialogWidth = DialogBox.Width;
+
+        double targetWidth = 300;
+
+        // animacja zw�ania
+        await DialogBox.AnimateAsync("shrink",
+            v => DialogBox.WidthRequest = v,
+            DialogBox.Width,
+            targetWidth,
+            length: 500,
+            easing: Easing.CubicIn);
+
+        // poka� pole bitwy
+        BattleFrame.Opacity = 0;
+        BattleFrame.IsVisible = true;
+
+        await BattleFrame.FadeTo(1, 150);
+
+        DialogLabel.IsVisible = false;
+        ActMenuGrid.IsVisible = false;
+        MercyMenuGrid.IsVisible = false;
+        ItemMenuGrid.IsVisible = false;
+    }
+    async Task AnimateBackToDialog()
+    {
+        BattleFrame.IsVisible = false;
+
+        DialogLabel.IsVisible = true;
+
+        await DialogBox.AnimateAsync("expand",
+            v => DialogBox.WidthRequest = v,
+            DialogBox.Width,
+            originalDialogWidth,
+            length: 500,
+            easing: Easing.CubicOut);
+
+        DialogBox.WidthRequest = -1;
     }
     async void StartEnemyTurn()
     {
         currentState = TurnState.EnemyTurn;
 
         DialogLabel.IsVisible = true;
-        DialogLabel.Text = "* Wróg atakuje...";
+        DialogLabel.Text = "* Random #!%@>* go!";
 
         await Task.Delay(800);
 
-        DialogLabel.IsVisible = false;
+        await AnimateBattleTransition();
 
-        BattleFrame.IsVisible = true;
         MovementControls.IsVisible = true;
         ActionButtons.IsVisible = false;
 
         await RunEnemyAttack();
 
-        BattleFrame.IsVisible = false;
-        MovementControls.IsVisible = false;
 
         EndEnemyTurn();
     }
 
     Random random = new();
-
     async Task RunEnemyAttack()
     {
-        StartBulletHell();
-        await Task.Delay(6000);
-        StopBulletHell();
-    }
+        int attackId = random.Next(1);
 
-    void EndEnemyTurn()
-    {
+        switch (attackId)
+        {
+            case 0:
+                StartBulletHell();
+                await Task.Delay(8000); // attack duration
+                StopBulletHell();
+                break;
+        }
+    }
+    async Task EndEnemyTurn()
+{
         currentState = TurnState.PlayerTurn;
+
+        await AnimateBackToDialog();
+
         ActionButtons.IsVisible = true;
         DialogLabel.IsVisible = true;
-        DialogLabel.Text = "* Co zrobisz?";
+        MovementControls.IsVisible = false;
+        DialogLabel.Text = "* Must have been the wind";
+        isInputLocked = false;
     }
-
     void DealDamage(int damage)
     {
         enemyHp -= damage;
         enemyHp = Math.Max(0, enemyHp);
-
-        DialogLabel.Text = $"* Zadałeś {damage} obrażeń!";
+        DialogLabel.Text = $"* Zada�e� {damage} obra�e�!";
         _ = ShowDamageText(damage);
+
+        if (enemyHp <= 0)
+        {
+            
+        }
     }
     const int PlayerSize = 16;
     const int BulletSize = 10;
@@ -386,6 +478,9 @@ public partial class GameplayPageMainUI : ContentPage
     {
         gameRunning = true;
 
+        Player.TranslationX = 140; // �rodek (300 / 2 - 8)
+        Player.TranslationY = 100;
+
         AbsoluteLayout.SetLayoutBounds(Player,
             new Rect(0, 0, PlayerSize, PlayerSize));
 
@@ -412,7 +507,6 @@ public partial class GameplayPageMainUI : ContentPage
 
         moveX = moveY = 0;
     }
-
     void GameTick(object sender, EventArgs e)
     {
         if (!gameRunning) return;
@@ -421,7 +515,6 @@ public partial class GameplayPageMainUI : ContentPage
         MovePlayer();
         CheckCollisions();
     }
-
     void MovePlayer()
     {
         double newX = Player.TranslationX + moveX;
@@ -433,7 +526,6 @@ public partial class GameplayPageMainUI : ContentPage
         Player.TranslationX = Math.Clamp(newX, 0, maxX);
         Player.TranslationY = Math.Clamp(newY, 0, maxY);
     }
-
     void SpawnBullet(object sender, EventArgs e)
     {
         var bullet = new BoxView
@@ -443,7 +535,7 @@ public partial class GameplayPageMainUI : ContentPage
             Color = Colors.White
         };
 
-        double x = random.NextDouble() * BattleField.Width;
+        double x = random.NextDouble() * (BattleField.Width - BulletSize);
         double y = -BulletSize;
 
         AbsoluteLayout.SetLayoutBounds(bullet, new Rect(x, y, BulletSize, BulletSize));
@@ -451,7 +543,6 @@ public partial class GameplayPageMainUI : ContentPage
 
         _ = MoveBullet(bullet);
     }
-
     async Task MoveBullet(BoxView bullet)
     {
         while (gameRunning && BattleField.Children.Contains(bullet))
@@ -467,7 +558,6 @@ public partial class GameplayPageMainUI : ContentPage
             await Task.Delay(16);
         }
     }
-
     void CheckCollisions()
     {
         foreach (var b in BattleField.Children.OfType<BoxView>()
@@ -482,7 +572,6 @@ public partial class GameplayPageMainUI : ContentPage
             }
         }
     }
-
     void UpdatePlayerHp()
     {
         HpLabel.Text = $"{playerHp}/{playerMaxHp}";
@@ -493,10 +582,9 @@ public partial class GameplayPageMainUI : ContentPage
         if (playerHp <= 0)
         {
             StopBulletHell();
-            DialogLabel.Text = "* Zginąłeś";
+            DialogLabel.Text = "* Death";
         }
     }
-
     bool IsColliding(VisualElement a, VisualElement b)
     {
         var r1 = new Rect(a.TranslationX, a.TranslationY, a.Width, a.Height);
@@ -504,16 +592,55 @@ public partial class GameplayPageMainUI : ContentPage
 
         return r1.IntersectsWith(r2);
     }
-
     async Task ShowDamageText(int damage)
     {
         DamageLabel.Text = damage.ToString();
         DamageLabel.Opacity = 0;
+        DamageLabel.TranslationX = 0;
+        DamageLabel.TranslationY = 0;
         DamageLabel.IsVisible = true;
 
-        await DamageLabel.FadeTo(1, 150);
+        Random rand = new();
+
+        double side = rand.Next(2) == 0 ? -1 : 1;
+        double angle = rand.NextDouble() * Math.PI * 2;
+        double distance = rand.Next(40, 80);
+
+        double startX = side * rand.Next(80, 140);
+        double startY = rand.Next(-100, -60);
+        double moveX = startX + Math.Cos(angle) * distance;
+        double moveY = startY + -Math.Abs(Math.Sin(angle) * distance);
+
+        var fadeIn = DamageLabel.FadeTo(1, 150);
+        var move = DamageLabel.TranslateTo(moveX, moveY, 700, Easing.SinOut);
+
+        await Task.WhenAll(fadeIn, move);
+
         await DamageLabel.FadeTo(0, 400);
 
+
         DamageLabel.IsVisible = false;
+    }
+}
+public static class AnimationExtensions
+{
+    public static Task AnimateAsync(this VisualElement view,
+        string name,
+        Action<double> callback,
+        double start,
+        double end,
+        uint length = 250,
+        Easing easing = null)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+
+        var animation = new Animation(callback, start, end, easing);
+
+        animation.Commit(view, name, 16, length, finished: (v, c) =>
+        {
+            tcs.SetResult(true);
+        });
+
+        return tcs.Task;
     }
 }
